@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { UploadIcon, MagicWandIcon } from './icons';
 
@@ -20,6 +19,7 @@ export const RefinementControls: React.FC<RefinementControlsProps> = ({
 
   const handleTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if(!textInput.trim()) return;
     onTextSubmit(textInput);
     setTextInput('');
   };
@@ -31,47 +31,50 @@ export const RefinementControls: React.FC<RefinementControlsProps> = ({
   };
 
   return (
-    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Text Refinement */}
-      <div className="p-6 bg-dark-card border border-dark-border rounded-lg">
-        <h3 className="text-lg font-semibold text-light-text mb-3">Refine with Text</h3>
-        <p className="text-sm text-medium-text mb-4">Suggest material changes, color adjustments, or add new features.</p>
-        <form onSubmit={handleTextSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
-            placeholder="e.g., 'Make it brushed metal' or 'Add a wooden cap'"
-            className="flex-grow p-2 bg-gray-800 border border-dark-border rounded-md focus:ring-2 focus:ring-brand-blue focus:outline-none transition-shadow"
-          />
-          <button type="submit" className="px-4 py-2 bg-brand-blue hover:bg-blue-600 text-white font-bold rounded-lg transition-colors">
-            Refine
-          </button>
-        </form>
-      </div>
+    <div className="p-6 bg-dark-card border border-dark-border rounded-lg shadow-lg space-y-8">
+        <div>
+            <h3 className="text-xl font-bold text-light-text mb-2">Refine & Finalize</h3>
+            <p className="text-medium-text">Make adjustments to get the perfect design before generating your marketing kit.</p>
+        </div>
 
-      {/* Image Refinement */}
-      <div className="p-6 bg-dark-card border border-dark-border rounded-lg">
-        <h3 className="text-lg font-semibold text-light-text mb-3">Refine with an Image</h3>
-        <p className="text-sm text-medium-text mb-4">Upload an image to inspire the design's color, texture, or style.</p>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept="image/*"
-          className="hidden"
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-dark-border hover:bg-gray-600 text-white font-bold rounded-lg transition-colors"
-        >
-          <UploadIcon className="w-5 h-5" />
-          Upload Inspiration
-        </button>
-      </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            {/* Text & Image Refinement */}
+            <div className="space-y-4">
+                 <h4 className="text-lg font-semibold text-light-text">Suggest a change</h4>
+                 <form onSubmit={handleTextSubmit} className="flex gap-2">
+                    <input
+                        type="text"
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
+                        placeholder="e.g., 'Make it brushed metal'"
+                        className="flex-grow p-3 bg-gray-800 border border-dark-border rounded-md focus:ring-2 focus:ring-brand-blue focus:outline-none transition-shadow"
+                    />
+                    <button type="submit" className="px-4 py-2 bg-brand-blue hover:bg-blue-600 text-white font-bold rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed" disabled={!textInput.trim()}>
+                        Refine
+                    </button>
+                 </form>
+            </div>
+             <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-light-text">...or use an image for inspiration</h4>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    className="hidden"
+                />
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-dark-border hover:bg-gray-600 text-white font-bold rounded-lg transition-colors"
+                >
+                    <UploadIcon className="w-5 h-5" />
+                    Upload Inspiration Image
+                </button>
+            </div>
+        </div>
+      
       {/* Generate Marketing Kit */}
-      <div className="md:col-span-2 mt-4">
+      <div className="border-t border-dark-border pt-6">
         <button
           onClick={onGenerateMarketingKit}
           disabled={!isKitGenerationEnabled}

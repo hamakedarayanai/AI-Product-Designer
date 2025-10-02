@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Header } from './components/Header';
 import { BriefInput } from './components/BriefInput';
@@ -6,14 +5,9 @@ import { ConceptGallery } from './components/ConceptGallery';
 import { RefinementControls } from './components/RefinementControls';
 import { MarketingKit } from './components/MarketingKit';
 import { Loader } from './components/Loader';
+import { Stepper } from './components/Stepper';
 import { geminiService } from './services/geminiService';
-import { MarketingKitData } from './types';
-
-enum AppStep {
-  BRIEF,
-  CONCEPTS,
-  MARKETING,
-}
+import { MarketingKitData, AppStep } from './types';
 
 const App: React.FC = () => {
   const [brief, setBrief] = useState<string>('');
@@ -98,7 +92,8 @@ const App: React.FC = () => {
     setLoadingMessage('Building your marketing kit...');
     
     try {
-      const kit = await geminiService.generateMarketingKit(brief, "the user's selected product design");
+      const base64Image = selectedConcept.split(',')[1];
+      const kit = await geminiService.generateMarketingKit(brief, base64Image);
       setMarketingKit(kit);
       setCurrentStep(AppStep.MARKETING);
     } catch (err) {
@@ -109,51 +104,59 @@ const App: React.FC = () => {
   }, [brief, selectedConcept]);
   
   return (
-    <div className="min-h-screen bg-dark-bg text-light-text">
+    <div className="min-h-screen">
       {isLoading && <Loader message={loadingMessage} />}
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         {error && (
-          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg relative mb-6" role="alert">
+          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg relative mb-6 animate-pulse" role="alert">
             <strong className="font-bold">Error: </strong>
             <span className="block sm:inline">{error}</span>
           </div>
         )}
 
         <div className="space-y-12">
-          <section id="step1-brief">
-             {currentStep === AppStep.BRIEF && <BriefInput onGenerate={handleGenerateConcepts} />}
-             {currentStep !== AppStep.BRIEF && (
-                <div className="p-6 bg-dark-card border border-dark-border rounded-lg shadow-lg">
-                    <h2 className="text-xl font-bold text-brand-blue mb-2">Your Design Brief</h2>
-                    <p className="text-medium-text">{brief}</p>
-                </div>
-             )}
-          </section>
-
-          {currentStep >= AppStep.CONCEPTS && (
-            <section id="step2-concepts">
-              <ConceptGallery
-                concepts={concepts}
-                selectedConcept={selectedConcept}
-                onSelect={setSelectedConcept}
-              />
-              {currentStep === AppStep.CONCEPTS && (
-                <RefinementControls
-                    onTextSubmit={handleRefineWithText}
-                    onImageSubmit={handleRefineWithImage}
-                    onGenerateMarketingKit={handleGenerateMarketingKit}
-                    isKitGenerationEnabled={!!selectedConcept}
-                />
+          <Stepper currentStep={currentStep} />
+          
+          <div className="transition-opacity duration-500 ease-in-out">
+            <section id="step1-brief">
+              {currentStep === AppStep.BRIEF && <BriefInput onGenerate={handleGenerateConcepts} />}
+              {currentStep > AppStep.BRIEF && (
+                  <div className="p-6 bg-dark-card border border-dark-border rounded-lg shadow-lg">
+                      <h2 className="text-xl font-bold text-brand-blue mb-2">Your Design Brief</h2>
+                      <p className="text-medium-text">{brief}</p>
+                  </div>
               )}
             </section>
-          )}
+          </div>
 
-          {currentStep === AppStep.MARKETING && marketingKit && (
-            <section id="step3-marketing">
-              <MarketingKit kit={marketingKit} />
-            </section>
-          )}
+          <div className={`transition-opacity duration-500 ease-in-out ${currentStep >= AppStep.CONCEPTS ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+            {currentStep >= AppStep.CONCEPTS && (
+              <section id="step2-concepts" className="space-y-8">
+                <ConceptGallery
+                  concepts={concepts}
+                  selectedConcept={selectedConcept}
+                  onSelect={setSelectedConcept}
+                />
+                {currentStep === AppStep.CONCEPTS && (
+                  <RefinementControls
+                      onTextSubmit={handleRefineWithText}
+                      onImageSubmit={handleRefineWithImage}
+                      onGenerateMarketingKit={handleGenerateMarketingKit}
+                      isKitGenerationEnabled={!!selectedConcept}
+                  />
+                )}
+              </section>
+            )}
+          </div>
+
+          <div className={`transition-opacity duration-500 ease-in-out ${currentStep === AppStep.MARKETING ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+            {currentStep === AppStep.MARKETING && marketingKit && (
+              <section id="step3-marketing">
+                <MarketingKit kit={marketingKit} />
+              </section>
+            )}
+          </div>
         </div>
       </main>
     </div>

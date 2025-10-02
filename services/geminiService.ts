@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { MarketingKitData, MarketingKitText } from "../types";
 
@@ -95,19 +94,33 @@ const refineWithImage = async (brief: string, file: File): Promise<string[]> => 
     }
 };
 
-const generateMarketingKit = async (brief: string, productDescription: string): Promise<MarketingKitData> => {
+const generateMarketingKit = async (brief: string, selectedConceptImage: string): Promise<MarketingKitData> => {
     try {
-        // Step 1: Generate Marketing Text
+        // Step 1: Get a description of the selected image
+        const imagePart = {
+            inlineData: { data: selectedConceptImage, mimeType: 'image/jpeg' },
+        };
+        const descriptionTextPart = {
+            text: 'Based on this product image, write a compelling one-sentence description of the product.'
+        };
+        const descriptionResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: { parts: [imagePart, descriptionTextPart] },
+        });
+        const productDescription = descriptionResponse.text;
+
+
+        // Step 2: Generate Marketing Text using the new description
         const textResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: `Based on the following product brief: "${brief}" for "${productDescription}", generate a complete marketing kit.`,
+            contents: `Based on the following product brief: "${brief}" and this concrete product description: "${productDescription}", generate a complete marketing text kit.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
                         productName: { type: Type.STRING, description: "A catchy, memorable name for the product." },
-                        productDescription: { type: Type.STRING, description: "A compelling 2-3 sentence description of the product." },
+                        productDescription: { type: Type.STRING, description: "A compelling 2-3 sentence description of the product, elaborating on the provided one-sentence description." },
                         adCopy: { type: Type.STRING, description: "Short, punchy ad copy for a social media campaign." }
                     },
                     required: ["productName", "productDescription", "adCopy"]
@@ -117,11 +130,11 @@ const generateMarketingKit = async (brief: string, productDescription: string): 
         
         const marketingText: MarketingKitText = JSON.parse(textResponse.text);
 
-        // Step 2: Generate Marketing Visuals
+        // Step 3: Generate Marketing Visuals
         const visualPrompts = [
-            `A vibrant lifestyle marketing photograph for social media featuring: ${marketingText.productName}. A person is happily using it in a modern, sun-drenched setting.`,
-            `A sleek product-focused shot of the ${marketingText.productName} on a minimalist background that complements its design. Showcases its key features.`,
-            `An action shot for an advertisement featuring the ${marketingText.productName}. The scene is energetic and targets the product's key demographic.`
+            `A vibrant lifestyle marketing photograph for social media featuring: ${marketingText.productName}. A person is happily using it in a modern, sun-drenched setting. The product should look exactly like the reference image.`,
+            `A sleek product-focused shot of the ${marketingText.productName} on a minimalist background that complements its design, matching the product in the reference image. Showcases its key features.`,
+            `An action shot for an advertisement featuring the ${marketingText.productName}, which must look identical to the one in the reference image. The scene is energetic and targets the product's key demographic.`
         ];
         
         const visualPromises = visualPrompts.map(prompt => 

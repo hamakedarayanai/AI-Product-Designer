@@ -1,4 +1,10 @@
 
+export enum AppStep {
+  BRIEF,
+  CONCEPTS,
+  MARKETING,
+}
+
 export interface MarketingKitText {
   productName: string;
   productDescription: string;
